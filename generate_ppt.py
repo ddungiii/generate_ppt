@@ -31,14 +31,21 @@ for filename in os.listdir(f"{TODAY_DIR}/사진"):
         students[key].append(os.path.join(TODAY_DIR, "사진", filename))
 
 for key in students:
-    students[key].sort(key=lambda x: int(x.split("_")[-1].split(".")[0])) # 사진 번호로 정렬
+    students[key].sort(
+        key=lambda x: int(x.split("_")[-1].split(".")[0])  # 사진 번호로 정렬
+    )
 
 """
 3. Get image's position by Template PPT
 """
 img_positions = collections.deque()
 for index, shape in enumerate(template_slide.shapes):
-    if shape.shape_type == 13 or shape.shape_type == 1:  # Picture type
+    # 13:  Picture type, 1: Auto Shape
+    # if shape.shape_type == 13 or shape.shape_type == 1:
+    if shape.shape_type == 1:
+        print(
+            f"{shape.shape_type}, left: {shape.left.cm:.2f}cm, top: {shape.top.cm:.2f}cm"
+        )
         img_positions.append(
             {
                 "left": shape.left,
@@ -48,7 +55,7 @@ for index, shape in enumerate(template_slide.shapes):
             }
         )
 
-img_positions.popleft() # 첫 img (부산대 로고) 제외
+# img_positions.popleft()  # 첫 img (부산대 로고) 제외
 
 """
 4. Generate New Slide for each Students.
@@ -59,21 +66,22 @@ for student, imgs in students.items():
         output_file = os.path.join(TODAY_DIR, "PPT", f"{student}.pptx")
 
         new_ppt = Presentation(input_file)
-        new_slide = new_ppt.slides.add_slide(new_ppt.slide_layouts[6]) # 빈 슬라이드 레이아웃
+        new_slide = new_ppt.slides.add_slide(
+            new_ppt.slide_layouts[6]  # 빈 슬라이드 레이아웃
+        )
 
         # COPY
         for shape in template_slide.shapes:
-            if shape.shape_type in [14, 17]: # 텍스트 복사
+            if shape.shape_type in [14, 17]:  # 텍스트 복사
                 el = shape.element
                 newel = copy.deepcopy(el)
-                new_slide.shapes._spTree.insert_element_before(newel, 'p:extLst')
-            
+                new_slide.shapes._spTree.insert_element_before(newel, "p:extLst")
+
             elif shape.shape_type == 13:  # 부산대 로고 복사
                 image_stream = io.BytesIO(shape.image.blob)
                 new_slide.shapes.add_picture(
                     image_stream, shape.left, shape.top, shape.width, shape.height
                 )
-            
 
         for i, position in enumerate(img_positions):
             new_slide.shapes.add_picture(
